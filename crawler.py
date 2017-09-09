@@ -5,16 +5,19 @@ import io
 import re
 
 import requests
-import dateutil.parser
-from genshi.input import HTML
-import smartypants
-
-import ez_epub
+#import dateutil.parser
+#from genshi.input import HTML
+#import smartypants
+from bs4 import BeautifulSoup
 
 # Setup session to not hit Android download app page
 session = requests.session()
 # No user agent. Wattpad now blocks all user agents containing "Python".
-session.headers['User-Agent'] = ''
+session.headers['User-Agent'] = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36"
+session.proxies = {
+        'http': 'socks5://127.0.0.1:1080',
+        'https': 'socks5://127.0.0.1:1080'
+}
 
 # Used by Android app normally
 # Example parameters are what Android provides
@@ -43,28 +46,17 @@ def download_story(story_id):
 
 	story_title = storyinfo['title']
 	story_description = storyinfo['description']
-	story_createDate = dateutil.parser.parse(storyinfo['createDate'])
-	story_modifyDate = dateutil.parser.parse(storyinfo['modifyDate'])
+	story_createDate = storyinfo['createDate']
+	story_modifyDate = storyinfo['modifyDate']
 	story_author = storyinfo['user']['name']
 	story_categories = [categories[c] for c in storyinfo['categories'] if c in categories] # category can be 0
 	story_rating = storyinfo['rating'] # TODO: I think 4 is adult?
-	story_cover = io.BytesIO(session.get(storyinfo['cover']).content)
 	story_url = storyinfo['url']
 
 	print('Story "{story_title}": {story_id}'.format(story_title=story_title, story_id=story_id))
 
-	# Setup epub
-	book = ez_epub.Book()
-	book.title = story_title
-	book.authors = [story_author]
-	book.sections = []
-	book.impl.addCover(fileobj=story_cover)
-	book.impl.description = HTML(story_description, encoding='utf-8') # TODO: not sure if this is HTML or text
-	book.impl.url = story_url
-	book.impl.addMeta('publisher', 'Wattpad - scraped')
-	book.impl.addMeta('source', story_url)
-
-	for part in storyinfo['parts']:
+	txt_content = ""
+	for chapter_index, part in enumerate(storyinfo['parts']):
 		chapter_title = part['title']
 
 		if part['draft']:
@@ -77,22 +69,21 @@ def download_story(story_id):
 
 		chapter_id = part['id']
 
-		# TODO: could intelligently only redownload modified parts
-		chapter_modifyDate = dateutil.parser.parse(part['modifyDate'])
+		chapter_modifyDate = part['modifyDate']
 
 		print('Downloading "{chapter_title}": {chapter_id}'.format(chapter_title=chapter_title, chapter_id=chapter_id))
 
 		chapter_html = session.get(API_STORYTEXT, params={'id': chapter_id, 'output': 'json'}).json()['text']
-		chapter_html = smartypants.smartypants(chapter_html)
+		pure_text = BeautifulSoup(chapter_html, 'lxml').get_text()
+		txt_content += "Chapter %d %s %s\n\n%s\n\n\n\n" %(chapter_index,
+		                chapter_title, chapter_modifyDate, pure_text)
 
-
-		section = ez_epub.Section()
-		section.html = HTML(chapter_html, encoding='utf-8')
-		section.title = chapter_title
-		book.sections.append(section)
-
-	print('Saving epub')
-	book.make('./{title}'.format(title=book.title.translate(ILLEAGAL_FILENAME_CHARACTERS)))
+	book = "%s\n\nCreate: %s\nModified: %s\nAuthor: %s\nCategory: %s\n\n\n%s"\
+	        %(story_title, story_createDate, story_modifyDate, story_author,
+	          story_categories, txt_content)
+	print('Saving TXT')
+	with open("story.txt", 'wt', encoding='utf-8', newline='\n') as fd:
+		fd.write(book)
 
 
 def get_story_id(url):
@@ -117,10 +108,11 @@ def get_story_id(url):
 
 
 def main():
-	if sys.argv[1:]:
-		story_urls = sys.argv[1:]
-	else:
-		story_urls = sys.stdin
+	#if sys.argv[1:]:
+	#	story_urls = sys.argv[1:]
+	#else:
+	#	story_urls = sys.stdin
+	story_urls = ["https://www.wattpad.com/story/24361000-roommates"]
 
 	for story_url in story_urls:
 		story_id = get_story_id(story_url)
