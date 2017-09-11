@@ -75,8 +75,8 @@ def download_story(story_id):
 
 		chapter_html = session.get(API_STORYTEXT, params={'id': chapter_id, 'output': 'json'}).json()['text']
 		pure_text = BeautifulSoup(chapter_html, 'lxml').get_text()
-		txt_content += "%s %s\n\n%s\n\n\n\n" %(chapter_title,
-		                                chapter_modifyDate, pure_text)
+		txt_content += "Chapter: %s\nModify at: %s\n\n%s\n\n\n\n"\
+		        %(chapter_title, chapter_modifyDate, pure_text)
 
 	book = "%s\n\nCreate: %s\nModified: %s\nAuthor: %s\nCategory: %s\n\n\n%s"\
 	        %(story_title, story_createDate, story_modifyDate, story_author,
