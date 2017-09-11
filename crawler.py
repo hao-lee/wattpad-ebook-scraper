@@ -56,7 +56,7 @@ def download_story(story_id):
 	print('Story "{story_title}": {story_id}'.format(story_title=story_title, story_id=story_id))
 
 	txt_content = ""
-	for chapter_index, part in enumerate(storyinfo['parts']):
+	for part in storyinfo['parts']:
 		chapter_title = part['title']
 
 		if part['draft']:
@@ -75,8 +75,8 @@ def download_story(story_id):
 
 		chapter_html = session.get(API_STORYTEXT, params={'id': chapter_id, 'output': 'json'}).json()['text']
 		pure_text = BeautifulSoup(chapter_html, 'lxml').get_text()
-		txt_content += "Chapter %d %s %s\n\n%s\n\n\n\n" %(chapter_index,
-		                chapter_title, chapter_modifyDate, pure_text)
+		txt_content += "%s %s\n\n%s\n\n\n\n" %(chapter_title,
+		                                chapter_modifyDate, pure_text)
 
 	book = "%s\n\nCreate: %s\nModified: %s\nAuthor: %s\nCategory: %s\n\n\n%s"\
 	        %(story_title, story_createDate, story_modifyDate, story_author,
