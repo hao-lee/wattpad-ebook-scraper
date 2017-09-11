@@ -82,7 +82,7 @@ def download_story(story_id):
 	        %(story_title, story_createDate, story_modifyDate, story_author,
 	          story_categories, txt_content)
 	print('Saving TXT')
-	with open("story.txt", 'wt', encoding='utf-8', newline='\n') as fd:
+	with open(story_title + ".txt", 'wt', encoding='utf-8', newline='\n') as fd:
 		fd.write(book)
 
 
