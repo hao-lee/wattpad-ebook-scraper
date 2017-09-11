@@ -107,20 +107,10 @@ def get_story_id(url):
 	return story_id
 
 
-def main():
-	#if sys.argv[1:]:
-	#	story_urls = sys.argv[1:]
-	#else:
-	#	story_urls = sys.stdin
-	story_urls = ["https://www.wattpad.com/story/24361000-roommates"]
-
-	for story_url in story_urls:
-		story_id = get_story_id(story_url)
-		if story_id:
-			download_story(story_id)
-		else:
-			print('ERROR: could not retrieve story', story_url)
-
-
 if __name__ == '__main__':
-	main()
+	story_url = "https://www.wattpad.com/story/20738183-expiration-date-duology"
+	story_id = get_story_id(story_url)
+	if story_id:
+		download_story(story_id)
+	else:
+		print('ERROR: could not retrieve story', story_url)
